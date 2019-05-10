@@ -18,11 +18,11 @@ public class SparkDriverProgram {
     @SuppressWarnings("unchecked")
 	public static void main(String args[]) throws FileNotFoundException, UnsupportedEncodingException {
     	String file_path = "hdfs://localhost:9000/examples/apache-log04-aug-31-aug-2011-nasa.log";
-    	String ip_file_path = "/home/fbertos/workspace/spark-example/ip-nasa.log";
-    	String out_path = "/home/fbertos/workspace/spark-example/output.log";
+    	String ip_file_path = "hdfs://localhost:9000/examples/ip-nasa.log";
+    	String out_path = "hdfs://localhost:9000/examples/output.log";
         SparkConf conf = new SparkConf().setAppName("spark-example");
         
-        PrintWriter writer = new PrintWriter(out_path, "UTF-8");
+        //PrintWriter writer = new PrintWriter(out_path, "UTF-8");
         
         JavaSparkContext sc = new JavaSparkContext(conf);
         
@@ -41,14 +41,14 @@ public class SparkDriverProgram {
         
         JavaPairRDD<String, Tuple2<String, String>> rddWithJoin = log_pairs.join(ip_pairs);
 
-        JavaRDD<String>res = rddWithJoin.map(w -> {
+        JavaRDD<String> res = rddWithJoin.map(w -> {
         	return w._1 + ';' + w._2._1 + ';' + w._2._2;
         	
         });
         
-        res.saveAsTextFile(out_path + ".1");
+        res.saveAsTextFile(out_path);
         
-        writer.println("Total join lines in log file " + rddWithJoin.count());
+        // writer.println("Total join lines in log file " + rddWithJoin.count());
         
         //writer.println("Total lines in log file " + lines.count());
         
@@ -91,6 +91,6 @@ public class SparkDriverProgram {
         */
         
         sc.close();
-        writer.close();        
+        //writer.close();        
     }
 }
