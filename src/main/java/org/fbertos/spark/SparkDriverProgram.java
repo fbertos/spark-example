@@ -3,7 +3,12 @@ package org.fbertos.spark;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
+import java.util.List;
 
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -17,6 +22,35 @@ import scala.Tuple2;
 public class SparkDriverProgram {
     @SuppressWarnings("unchecked")
 	public static void main(String args[]) throws FileNotFoundException, UnsupportedEncodingException {
+        SparkConf conf = new SparkConf().setAppName("spark-example");
+    	JavaSparkContext sc = new JavaSparkContext(conf);
+    	String path = "hdfs://localhost:9000/input/test.txt";
+    	String o_path = "hdfs://localhost:9000/output/";
+        JavaRDD<String> lines = sc.textFile(path);
+
+        JavaRDD<String> words = lines.flatMap(l -> {
+        	List<String> w = Arrays.asList(l.split(" "));
+        	return w.iterator();
+        });
+        
+        JavaPairRDD<String, Integer> counts = words.mapToPair(w -> {
+        	return new Tuple2<String, Integer>(w, 1);
+        });
+        
+        counts = counts.reduceByKey((a, n) -> {
+        	return a + n;
+        });
+               
+        JavaRDD<String> results = counts.flatMap(c -> {
+            List<String> w = Arrays.asList(c._1 + ";" + c._2.toString());
+            return w.iterator();
+        });
+        
+
+        results.saveAsTextFile(o_path);
+        sc.close();
+        
+        /*
     	String file_path = "hdfs://localhost:9000/examples/apache-log04-aug-31-aug-2011-nasa.log";
     	String ip_file_path = "hdfs://localhost:9000/examples/ip-nasa.log";
     	String out_path = "hdfs://localhost:9000/examples/output.log";
@@ -90,7 +124,7 @@ public class SparkDriverProgram {
                 + lines.filter(oneLine -> oneLine.contains(".gif")).count());
         */
         
-        sc.close();
+        //sc.close();
         //writer.close();        
     }
 }
